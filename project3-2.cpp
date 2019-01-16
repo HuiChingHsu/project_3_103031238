@@ -3,31 +3,34 @@ public:
     void makeMove(int Record[5][6], int Max[5][6], Color color[5][6], Color inputColor){
         // Your Code
         int bestVal;
+        int a = -10000, b = 10000;
         if(inputColor == Blue) bestVal = -10000;
         else bestVal = 10000;
         x = -1, y = -1;
 
-        int rec[5][6];
-        Color c[5][6];
+        int record[5][6], rec[5][6];
+        Color C[5][6], c[5][6];
         for(int i=0; i<5; i++){
             for(int j=0; j<6; j++){
+                record[i][j] = Record[i][j];
                 rec[i][j] = Record[i][j];
+                C[i][j] = color[i][j];
                 c[i][j] = color[i][j];
             }
         }
 
         for(int i=0; i<5; i++){
             for(int j=0; j<6; j++){
-                if(color[i][j] == White || color[i][j] == Blue){
+                if((C[i][j] == White || C[i][j] == Blue) && inputColor == Blue){
                     //make the move
-                    chain(i, j, Blue, Record, color);
-                    int moveVal = MiniMax(Record, color, 0, Blue, Max);
+                    chain(i, j, Blue, record, C);
+                    int moveVal = MiniMax(record, C, 0, Blue, Max, a, b);
 
                     //undo the move
                     for(int i=0; i<5; i++){
                         for(int j=0; j<6; j++){
-                            Record[i][j] = rec[i][j];
-                            color[i][j] = c[i][j];
+                            record[i][j] = rec[i][j];
+                            C[i][j] = c[i][j];
                         }
                     }
 
@@ -36,16 +39,16 @@ public:
                         bestVal = moveVal;
                     }
                 }
-                if(color[i][j] == White || color[i][j] == Red){
+                if((C[i][j] == White || C[i][j] == Red) && inputColor == Red){
                     //make the move
-                    chain(i, j, Red, Record, color);
-                    int moveVal = MiniMax(Record, color, 0, Red, Max);
+                    chain(i, j, Red, record, C);
+                    int moveVal = MiniMax(record, C, 0, Red, Max, a, b);
 
                     //undo the move
                     for(int i=0; i<5; i++){
                         for(int j=0; j<6; j++){
-                            Record[i][j] = rec[i][j];
-                            color[i][j] = c[i][j];
+                            record[i][j] = rec[i][j];
+                            C[i][j] = c[i][j];
                         }
                     }
 
@@ -89,6 +92,9 @@ public:
         for(int i=0; i<5; i++){
             for(int j=0; j<6; j++){
 
+                if(color[i][j] == Blue) score += Record[i][j];
+                else if(color[i][j] == Red) score -= Record[i][j];
+                
                 if(color[i][j] == Blue){
                     if(i>0 && color[i-1][j] == Red) score -= (5-Max[i][j]);
                     if(i<4 && color[i+1][j] == Red) score -= (5-Max[i][j]);
@@ -268,8 +274,8 @@ public:
                     }
                 }
 
-                if(color[i][j] == Blue) score += 1;
-                else if(color[i][j] == Red) score -= 1;
+                /*if(color[i][j] == Blue) score += 1;
+                else if(color[i][j] == Red) score -= 1;*/
             }
         }
 
@@ -282,7 +288,8 @@ public:
                         if(isCritical(i, k, Record)) cnt++;
                         else break;
                     }
-                    score += 2*cnt;
+                    if(color[i][j] == Blue) score += 3*cnt;
+                    else if(color[i][j] == Red) score -= 3*cnt;
                     j = k;
                 }
             }
@@ -296,7 +303,8 @@ public:
                         if(isCritical(k, j, Record)) cnt++;
                         else break;
                     }
-                    score += 2*cnt;
+                    if(color[i][j] == Blue) score += 3*cnt;
+                    else if(color[i][j] == Red) score -= 3*cnt;
                     i = k;
                 }
             }
@@ -350,11 +358,11 @@ public:
     }
 
     // return the board value
-    int MiniMax(int Record[5][6], Color color[5][6], int depth, Color inputColor, int Max[5][6])
+    int MiniMax(int Record[5][6], Color color[5][6], int depth, Color inputColor, int Max[5][6], int a, int b)
     {
         int score = evaluate(Record, color, Max);
 
-        if(depth == 3) return score;
+        if(depth == 2) return score;
 
         if(!isMoveLeft(Record)) return 0;
         //keep the initial board
@@ -377,7 +385,9 @@ public:
                         chain(i, j, Blue, Record, color);
                     }
                     //choose the maximum value
-                    best = max(best, MiniMax(Record, color, depth+1, Red, Max));
+                    best = max(best, MiniMax(Record, color, depth+1, Red, Max, a, b));
+                    a = max(a, best);//
+                    if(b <= a) break;//
 
                     // undo the move
                     for(int k=0; k<5; k++){
@@ -388,6 +398,7 @@ public:
                     }
 
                 }
+                if(b <= a) break;//
             }
             return best;
         }
@@ -401,7 +412,9 @@ public:
                         chain(i, j, Red, Record, color);
                     }
                     //choose the maximum value
-                    best = min(best, MiniMax(Record, color, depth+1, Red, Max));
+                    best = min(best, MiniMax(Record, color, depth+1, Red, Max, a, b));
+                    b = min(b, best);
+                    if(b <= a) break;
 
                     // undo the move
                     for(int k=0; k<5; k++){
@@ -412,6 +425,7 @@ public:
                     }
 
                 }
+                if(b <= a) break;
             }
             return best;
         }
